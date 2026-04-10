@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YourCMO — AI Marketing Agent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #E8692D;
+      --primary-hover: #D4581F;
+      --primary-light: #FFF3ED;
+      --navy: #1E293B;
+      --bg: #FAFAFA;
+      --white: #FFFFFF;
+      --border: #F0F0F0;
+      --text: #1E293B;
+      --muted: #94A3B8;
+      --success: #22C55E;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--white); border-right: 1px solid var(--border); padding: 24px 16px; position: fixed; height: 100vh; display: flex; flex-direction: column; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 8px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar-logo img { height: 36px; border-radius: 8px; }
+    .sidebar-logo span { font-weight: 700; font-size: 17px; color: var(--navy); }
+    .sidebar-logo .sub { font-size: 11px; color: var(--primary); font-weight: 600; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; color: var(--muted); font-weight: 500; transition: all 0.15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: var(--primary-light); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+    .status-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .main { margin-left: 240px; padding: 28px 32px; flex: 1; }
+    .page { display: none; } .page.active { display: block; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+    .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .card-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-size: 15px; font-weight: 600; }
+    .card-body { padding: 20px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+    .stat-card.accent { background: linear-gradient(135deg, var(--primary), #F59E0B); color: white; border: none; }
+    .stat-card.accent .stat-label { color: rgba(255,255,255,0.8); }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-sub { font-size: 11px; margin-top: 4px; color: var(--success); font-weight: 500; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 900px) { .grid-2, .grid-3, .stats { grid-template-columns: 1fr; } .sidebar { display: none; } .main { margin-left: 0; } }
+    .btn { padding: 10px 20px; border-radius: 24px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: white; } .btn-primary:hover { background: var(--primary-hover); }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+    .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--text); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--white); font-family: inherit; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+    .badge { font-size: 10px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+    .badge.high { background: #DCFCE7; color: #166534; } .badge.medium { background: #FEF9C3; color: #854D0E; }
+    .cc-tag { font-size: 9px; background: var(--primary-light); color: var(--primary); padding: 2px 8px; border-radius: 20px; display: inline-block; margin: 2px; }
+    .cc-city { font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .empty { text-align: center; padding: 40px; color: var(--muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.5s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; }
+    td { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 13px; }
+    .status { padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status.active { background: #DCFCE7; color: #166534; } .status.draft { background: #F1F5F9; color: #475569; }
+    .screen-thumb { flex-shrink: 0; width: 140px; border-radius: 16px; overflow: hidden; border: 2px solid var(--border); box-shadow: var(--shadow); cursor: pointer; transition: transform 0.15s; }
+    .screen-thumb:hover { transform: scale(1.03); border-color: var(--primary); }
+    .screen-thumb img { width: 100%; display: block; }
+    .screen-thumb .label { padding: 6px 8px; font-size: 10px; font-weight: 600; color: var(--muted); text-align: center; background: var(--white); }
+    .setup-banner { background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 2px solid #F59E0B; border-radius: var(--radius); padding: 20px; margin-bottom: 24px; text-align: center; }
+    .setup-banner h2 { font-size: 18px; margin-bottom: 8px; } .setup-banner p { font-size: 13px; color: #92400E; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img id="sidebar-logo-img" src="" alt="Logo" onerror="this.style.display='none'" style="display:none">
+        <div><span id="sidebar-brand-name">YourCMO</span><br><span class="sub">AI Marketing Agent</span></div>
+      </div>
+      <button class="nav-item" onclick="nav('brand-setup',this)" id="nav-setup"><span class="icon">⚙️</span> Brand Setup</button>
+      <button class="nav-item active" onclick="nav('overview',this)"><span class="icon">📊</span> Overview</button>
+      <button class="nav-item" onclick="nav('screens',this)"><span class="icon">📱</span> App Screens</button>
+      <button class="nav-item" onclick="nav('suggestions',this)"><span class="icon">💡</span> Suggestions</button>
+      <button class="nav-item" onclick="nav('generate',this)"><span class="icon">✨</span> Generate</button>
+      <button class="nav-item" onclick="nav('calendar',this)"><span class="icon">📅</span> Calendar</button>
+      <div class="sidebar-footer">
+        <div class="status-row"><div class="status-dot" id="status-dot" style="background:var(--muted)"></div> <span id="status-text">Loading...</span></div>
+      </div>
+    </aside>
+    <main class="main">
+
+      <!-- BRAND SETUP -->
+      <div id="p-brand-setup" class="page">
+        <div class="page-title">⚙️ Brand Setup</div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Set up your brand once. The AI agent learns everything about your product and acts as your CMO, digital marketer, and content creator.</p>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>🏢 Brand Identity</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Brand Name *</label><input id="b-name" placeholder="e.g. Rewoz, Canva, Atlassian"></div>
+              <div class="form-group"><label>Tagline</label><input id="b-tagline" placeholder="e.g. Turn customers into loyal regulars"></div>
+              <div class="form-group"><label>Website</label><input id="b-website" placeholder="e.g. https://yourbrand.com"></div>
+              <div class="form-group"><label>Instagram Handle</label><input id="b-instagram" placeholder="e.g. @yourbrand"></div>
+              <div class="form-group"><label>Facebook Page</label><input id="b-facebook" placeholder="e.g. facebook.com/yourbrand"></div>
+              <div class="form-group"><label>Email</label><input id="b-email" placeholder="e.g. hello@yourbrand.com"></div>
+              <div class="form-group"><label>Founded Info</label><input id="b-founded" placeholder="e.g. Founded in Adelaide, Australia"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>📦 Product Details</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>What does your product/service do? *</label><textarea id="b-description" rows="3" placeholder="e.g. Digital loyalty platform for independent cafes. Replace paper stamp cards with a mobile app."></textarea></div>
+              <div class="form-group"><label>Pricing</label><input id="b-pricing" placeholder="e.g. $39/month, Free, From $99"></div>
+              <div class="form-group"><label>Free Trial</label><input id="b-trial" placeholder="e.g. 90-day free trial, 14-day trial"></div>
+              <div class="form-group"><label>Key Features (comma separated)</label><textarea id="b-features" rows="2" placeholder="e.g. Digital loyalty cards, Order-ahead, Analytics dashboard, POS integration"></textarea></div>
+              <div class="form-group"><label>What makes you different? (comma separated)</label><textarea id="b-usps" rows="2" placeholder="e.g. $0 commission, Built for cafes, 5 min setup, Full data ownership"></textarea></div>
+              <div class="form-group"><label>Proven Stats (comma separated)</label><textarea id="b-stats" rows="2" placeholder="e.g. 2x repeat visits, 30% revenue growth, 4.8/5 rating"></textarea></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>🌏 Origin & Market</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Origin Country *</label><input id="b-origin-country" placeholder="e.g. Australia"></div>
+              <div class="form-group"><label>Origin City</label><input id="b-origin-city" placeholder="e.g. Adelaide"></div>
+              <div class="form-group"><label>Target Countries (comma separated)</label><input id="b-target-countries" placeholder="e.g. Australia, New Zealand"></div>
+              <div class="form-group"><label>Target Cities (comma separated) *</label><input id="b-target-cities" placeholder="e.g. Adelaide, Melbourne, Sydney, Brisbane"></div>
+              <div class="form-group"><label>Domain / Category *</label><input id="b-domain" placeholder="e.g. Cafe Loyalty, SaaS, E-commerce, Health & Fitness, Fashion"></div>
+              <div class="form-group"><label>Sub-Category</label><input id="b-subcategory" placeholder="e.g. Independent cafes, Small business, B2B"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>🎯 Target Audience</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Who is your target audience? *</label><input id="b-audience" placeholder="e.g. Independent cafe owners, Fitness enthusiasts, Small business owners"></div>
+              <div class="form-group"><label>Age Range</label><input id="b-age" placeholder="e.g. 25-55" value="25-55"></div>
+              <div class="form-group"><label>Interests (comma separated)</label><input id="b-interests" placeholder="e.g. cafes, coffee, small business, hospitality"></div>
+              <div class="form-group"><label>Pain Points your product solves (comma separated)</label><textarea id="b-painpoints" rows="2" placeholder="e.g. Paper cards get lost, High commission fees, No customer data, Competing with chains"></textarea></div>
+              <div class="form-group"><label>Competitors (comma separated)</label><input id="b-competitors" placeholder="e.g. UberEats, DoorDash, Generic loyalty apps"></div>
+              <div class="form-group"><label>How you beat competitors</label><textarea id="b-advantage" rows="2" placeholder="e.g. Zero commission, purpose-built for cafes, 90-day free trial"></textarea></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>🎨 Brand Style</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Brand Voice (comma separated)</label><input id="b-voice" placeholder="e.g. Friendly, Professional, Aussie casual, Warm" value="Friendly, Professional"></div>
+              <div class="form-group"><label>Content Tone</label><input id="b-tone" placeholder="e.g. casual and fun, professional, edgy" value="friendly and approachable"></div>
+              <div class="form-group"><label>Primary Brand Color</label><input type="color" id="b-color-primary" value="#E8692D" style="height:40px;"></div>
+              <div class="form-group"><label>Secondary Color (optional)</label><input type="color" id="b-color-secondary" value="#1E293B" style="height:40px;"></div>
+              <div class="form-group"><label>Hashtag Prefix</label><input id="b-hashtag" placeholder="e.g. #YourBrand"></div>
+              <div class="form-group"><label>Platforms</label><input id="b-platforms" placeholder="e.g. instagram, facebook, tiktok" value="instagram, facebook"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>🤖 Agent Role</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Agent Role</label><textarea id="b-role" rows="3">Chief Marketing Officer, Digital Marketing Expert & Top Content Creator</textarea></div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">The AI agent will act as your brand's CMO, digital marketer, and content creator. It will learn your product deeply and create content that matches your brand voice, targets your audience, and rides current trends.</p>
+              <div class="form-group"><label>Topics to Avoid (comma separated)</label><input id="b-avoid" placeholder="e.g. politics, religion, competitor bashing"></div>
+              <button class="btn btn-primary" style="width:100%;margin-top:12px;padding:14px;" onclick="saveBrand()">💾 Save Brand Setup</button>
+              <div id="brand-save-result" style="margin-top:12px;text-align:center;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OVERVIEW -->
+      <div id="p-overview" class="page active">
+        <div id="setup-banner" class="setup-banner" style="display:none;">
+          <h2>👋 Welcome to YourCMO</h2>
+          <p>Set up your brand first so the AI agent can learn about your product and start creating content.</p>
+          <button class="btn btn-primary" onclick="nav('brand-setup',document.getElementById('nav-setup'))">⚙️ Set Up Brand</button>
+        </div>
+        <div class="page-title" id="overview-title">Dashboard</div>
+        <div class="stats" id="overview-stats">
+          <div class="stat-card accent"><div class="stat-label">Brand</div><div class="stat-value" id="ov-brand">—</div><div class="stat-sub" id="ov-domain"></div></div>
+          <div class="stat-card"><div class="stat-label">Suggestions</div><div class="stat-value" id="ov-suggestions">0</div><div class="stat-sub">from autopilot</div></div>
+          <div class="stat-card"><div class="stat-label">Scheduled</div><div class="stat-value" id="ov-scheduled">0</div><div class="stat-sub">upcoming posts</div></div>
+          <div class="stat-card"><div class="stat-label">Images</div><div class="stat-value" id="ov-images">0</div><div class="stat-sub">generated</div></div>
+        </div>
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header"><h3>📱 App Screens</h3></div>
+          <div class="card-body"><div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;" id="screen-gallery"></div></div>
+        </div>
+      </div>
+
+      <!-- APP SCREENS -->
+      <div id="p-screens" class="page">
+        <div class="page-title">📱 App Screens</div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Drop PNG files into <code>assets/figma-screens/</code> and they appear here. Used as reference images in content generation.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;" id="all-screens"></div>
+      </div>
+
+      <!-- SUGGESTIONS -->
+      <div id="p-suggestions" class="page">
+        <div class="page-title">💡 AI Suggestions <span id="sug-badge" style="background:var(--primary);color:white;font-size:12px;padding:2px 10px;border-radius:20px;margin-left:8px;"></span></div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">The Marketing Autopilot runs 24/7, analysing trends for your brand. Approve to auto-schedule, copy for manual posting, or dismiss.</p>
+        <div id="sug-list"></div>
+        <div class="card" style="margin-top:20px;"><div class="card-header"><h3>Autopilot Status</h3></div><div class="card-body" id="sug-status" style="font-size:13px;color:var(--muted);"></div></div>
+      </div>
+
+      <!-- GENERATE -->
+      <div id="p-generate" class="page">
+        <div class="page-title">✨ Generate Content</div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Settings</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>City</label><select id="g-city"></select></div>
+              <div class="form-group"><label>Trend (optional)</label><input id="g-trend" placeholder="Leave empty for auto-trend"></div>
+              <div class="form-group"><label>Visual Style</label><select id="g-style">
+                <option value="">🎲 Random (mixed feed)</option>
+                <option value="cinematic-photo">📸 Cinematic Photo</option>
+                <option value="cartoon-flat">🎨 Cartoon / Flat Illustration</option>
+                <option value="3d-render">🧊 3D Render (Pixar-style)</option>
+                <option value="watercolor">🖌️ Watercolor Painting</option>
+                <option value="retro-vintage">🏄 Retro Vintage Poster</option>
+                <option value="minimal-graphic">◻️ Minimal Graphic Design</option>
+                <option value="street-photo">📷 Street Photography</option>
+                <option value="collage-mixed">✂️ Mixed Media Collage</option>
+                <option value="neon-pop">💜 Neon Pop Art</option>
+                <option value="cozy-editorial">☕ Cozy Editorial</option>
+              </select></div>
+              <div class="form-group"><label>Include App Screen</label><select id="g-screen"><option value="">None</option></select></div>
+              <button class="btn btn-primary" style="width:100%;" onclick="generate()">🖼️ Generate Image + Caption</button>
+              <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">Image is generated from the caption content</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Preview</h3><span id="g-style-badge" style="font-size:11px;color:var(--muted);"></span></div>
+            <div class="card-body" id="g-preview"><div class="empty"><div class="empty-icon">🎨</div><p>Choose settings and generate</p></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div id="p-calendar" class="page">
+        <div class="page-title">📅 Content Calendar</div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <button class="btn btn-sm btn-outline" onclick="calNav(-1)">←</button>
+              <h3 id="cal-title">April 2026</h3>
+              <button class="btn btn-sm btn-outline" onclick="calNav(1)">→</button>
+            </div>
+            <div class="card-body" style="padding:8px;">
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
+                <div style="font-size:10px;color:var(--muted);padding:4px;">Mon</div><div style="font-size:10px;color:var(--muted);padding:4px;">Tue</div><div style="font-size:10px;color:var(--muted);padding:4px;">Wed</div><div style="font-size:10px;color:var(--muted);padding:4px;">Thu</div><div style="font-size:10px;color:var(--muted);padding:4px;">Fri</div><div style="font-size:10px;color:var(--muted);padding:4px;">Sat</div><div style="font-size:10px;color:var(--muted);padding:4px;">Sun</div>
+              </div>
+              <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Schedule New Post</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="sch-date"></div>
+              <div class="form-group"><label>City</label><select id="sch-city"></select></div>
+              <div class="form-group"><label>Platform</label><select id="sch-platform"><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="tiktok">TikTok</option></select></div>
+              <div class="form-group"><label>Caption (leave empty for auto-generate)</label><textarea id="sch-caption" rows="2" placeholder="AI will write this automatically..."></textarea></div>
+              <button class="btn btn-primary" style="width:100%;" onclick="schedulePost()">📅 Schedule Post</button>
+              <div id="sch-result" style="margin-top:12px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header"><h3>Upcoming Posts</h3><span id="sch-stats" style="font-size:12px;color:var(--muted);"></span></div>
+          <div class="card-body" style="padding:0;"><table><thead><tr><th>Date</th><th>City</th><th>Platform</th><th>Status</th><th>Caption</th><th></th></tr></thead><tbody id="sch-table"></tbody></table></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    let brandConfig = {};
+
+    // ── Load brand config on startup ─────────────────────────────
+    async function loadBrand() {
+      try {
+        const res = await fetch('/api/brand');
+        const data = await res.json();
+        brandConfig = data.brand || {};
+        applyBrand();
+      } catch { brandConfig = {}; applyBrand(); }
+    }
+
+    function applyBrand() {
+      const name = brandConfig.brandName || 'YourCMO';
+      document.title = `${name} — AI Marketing Agent`;
+      document.getElementById('sidebar-brand-name').textContent = name;
+      if (brandConfig.logoPath) {
+        const img = document.getElementById('sidebar-logo-img');
+        img.src = '/' + brandConfig.logoPath;
+        img.style.display = 'block';
+      }
+      if (brandConfig.brandColors?.primary) document.documentElement.style.setProperty('--primary', brandConfig.brandColors.primary);
+
+      // Overview
+      document.getElementById('ov-brand').textContent = name;
+      document.getElementById('ov-domain').textContent = brandConfig.domain || 'Set up brand →';
+
+      // Show setup banner if not configured
+      if (!brandConfig.setupComplete) {
+        document.getElementById('setup-banner').style.display = 'block';
+        document.getElementById('nav-setup').style.background = '#FEF3C7';
+        document.getElementById('nav-setup').style.color = '#92400E';
+      } else {
+        document.getElementById('setup-banner').style.display = 'none';
+      }
+
+      // Populate city dropdowns
+      const cities = brandConfig.targetCities || ['Your City'];
+      ['g-city', 'sch-city'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        cities.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+      });
+
+      // Fill brand setup form
+      if (brandConfig.brandName) fillBrandForm();
+    }
+
+    function fillBrandForm() {
+      const b = brandConfig;
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+      set('b-name', b.brandName); set('b-tagline', b.tagline); set('b-website', b.website);
+      set('b-instagram', b.instagram); set('b-facebook', b.facebook); set('b-email', b.email);
+      set('b-founded', b.foundedInfo); set('b-description', b.productDescription);
+      set('b-pricing', b.pricing); set('b-trial', b.freeTrial);
+      set('b-features', (b.keyFeatures || []).join(', ')); set('b-usps', (b.uniqueSellingPoints || []).join(', '));
+      set('b-stats', (b.provenStats || []).join(', '));
+      set('b-origin-country', b.originCountry); set('b-origin-city', b.originCity);
+      set('b-target-countries', (b.targetCountries || []).join(', '));
+      set('b-target-cities', (b.targetCities || []).join(', '));
+      set('b-domain', b.domain); set('b-subcategory', b.subCategory);
+      set('b-audience', b.targetAudience); set('b-age', b.ageRange);
+      set('b-interests', (b.interests || []).join(', ')); set('b-painpoints', (b.painPoints || []).join(', '));
+      set('b-competitors', (b.competitors || []).join(', ')); set('b-advantage', b.competitiveAdvantage);
+      set('b-voice', (b.brandVoice || []).join(', ')); set('b-tone', b.contentTone);
+      if (b.brandColors?.primary) document.getElementById('b-color-primary').value = b.brandColors.primary;
+      if (b.brandColors?.secondary) document.getElementById('b-color-secondary').value = b.brandColors.secondary;
+      set('b-hashtag', b.hashtagPrefix); set('b-platforms', (b.platforms || []).join(', '));
+      set('b-role', b.agentRole); set('b-avoid', (b.avoidTopics || []).join(', '));
+    }
+
+    function splitCSV(val) { return val ? val.split(',').map(s => s.trim()).filter(Boolean) : []; }
+
+    async function saveBrand() {
+      const config = {
+        brandName: document.getElementById('b-name').value.trim(),
+        tagline: document.getElementById('b-tagline').value.trim(),
+        website: document.getElementById('b-website').value.trim(),
+        instagram: document.getElementById('b-instagram').value.trim(),
+        facebook: document.getElementById('b-facebook').value.trim(),
+        email: document.getElementById('b-email').value.trim(),
+        foundedInfo: document.getElementById('b-founded').value.trim(),
+        productDescription: document.getElementById('b-description').value.trim(),
+        pricing: document.getElementById('b-pricing').value.trim(),
+        freeTrial: document.getElementById('b-trial').value.trim(),
+        keyFeatures: splitCSV(document.getElementById('b-features').value),
+        uniqueSellingPoints: splitCSV(document.getElementById('b-usps').value),
+        provenStats: splitCSV(document.getElementById('b-stats').value),
+        originCountry: document.getElementById('b-origin-country').value.trim(),
+        originCity: document.getElementById('b-origin-city').value.trim(),
+        targetCountries: splitCSV(document.getElementById('b-target-countries').value),
+        targetCities: splitCSV(document.getElementById('b-target-cities').value),
+        domain: document.getElementById('b-domain').value.trim(),
+        subCategory: document.getElementById('b-subcategory').value.trim(),
+        targetAudience: document.getElementById('b-audience').value.trim(),
+        ageRange: document.getElementById('b-age').value.trim(),
+        interests: splitCSV(document.getElementById('b-interests').value),
+        painPoints: splitCSV(document.getElementById('b-painpoints').value),
+        competitors: splitCSV(document.getElementById('b-competitors').value),
+        competitiveAdvantage: document.getElementById('b-advantage').value.trim(),
+        brandVoice: splitCSV(document.getElementById('b-voice').value),
+        contentTone: document.getElementById('b-tone').value.trim(),
+        brandColors: {
+          primary: document.getElementById('b-color-primary').value,
+          secondary: document.getElementById('b-color-secondary').value,
+        },
+        hashtagPrefix: document.getElementById('b-hashtag').value.trim(),
+        platforms: splitCSV(document.getElementById('b-platforms').value),
+        agentRole: document.getElementById('b-role').value.trim(),
+        avoidTopics: splitCSV(document.getElementById('b-avoid').value),
+      };
+
+      if (!config.brandName || !config.productDescription) {
+        document.getElementById('brand-save-result').innerHTML = '<span style="color:#EF4444;font-size:12px;">Brand name and product description are required</span>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/brand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config) });
+        const data = await res.json();
+        brandConfig = data.brand;
+        applyBrand();
+        document.getElementById('brand-save-result').innerHTML = '<span style="color:var(--success);font-size:12px;">✅ Brand setup saved! Autopilot is now running for your brand.</span>';
+      } catch (e) {
+        document.getElementById('brand-save-result').innerHTML = `<span style="color:#EF4444;font-size:12px;">Error: ${e.message}</span>`;
+      }
+    }
+
+    // ── Navigation ───────────────────────────────────────────────
+    function nav(page, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('p-' + page).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      if (page === 'suggestions') loadSuggestions();
+      if (page === 'calendar') renderCal();
+      if (page === 'screens') loadScreens();
+    }
+
+    // ── Screens ──────────────────────────────────────────────────
+    async function loadScreens() {
+      try {
+        const res = await fetch('/api/screens');
+        const data = await res.json();
+        const screens = data.screens || [];
+        const gallery = document.getElementById('screen-gallery');
+        const all = document.getElementById('all-screens');
+        const screenSel = document.getElementById('g-screen');
+
+        gallery.innerHTML = screens.length ? screens.map(s => `<div class="screen-thumb"><img src="${s.url}" alt="${s.file}"><div class="label">${s.file.replace('.png','')}</div></div>`).join('') : '<div class="empty"><p>No screens yet. Drop PNGs into assets/figma-screens/</p></div>';
+        all.innerHTML = screens.map(s => `<div class="screen-thumb" style="width:160px"><img src="${s.url}" alt="${s.file}"><div class="label">${s.file.replace('.png','')}</div></div>`).join('');
+
+        // Populate generate dropdown
+        screenSel.innerHTML = '<option value="">None</option>';
+        screens.forEach(s => { const o = document.createElement('option'); o.value = s.file; o.textContent = s.file.replace('.png',''); screenSel.appendChild(o); });
+      } catch {}
+    }
+
+    // ── Suggestions ──────────────────────────────────────────────
+    async function loadSuggestions() {
+      try {
+        const res = await fetch('/api/suggestions');
+        const data = await res.json();
+        const sug = data.suggestions || [];
+        document.getElementById('sug-badge').textContent = sug.length > 0 ? `${sug.length} new` : '';
+        if (sug.length === 0) {
+          document.getElementById('sug-list').innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><p>Autopilot is analysing trends... suggestions will appear here.</p></div>';
+        } else {
+          document.getElementById('sug-list').innerHTML = sug.map(s => `
+            <div class="card" style="margin-bottom:12px;"><div class="card-body" style="display:flex;gap:16px;align-items:flex-start;">
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <span class="cc-city">${s.city}</span>
+                  <span class="badge ${s.confidence > 0.7 ? 'high' : 'medium'}">${Math.round(s.confidence * 100)}% match</span>
+                  <span style="font-size:11px;color:var(--muted);">Best: ${new Date(s.bestTime).toLocaleString('en-AU', { weekday:'short', hour:'2-digit', minute:'2-digit' })}</span>
+                </div>
+                <div style="font-size:14px;margin-bottom:4px;">${s.caption}</div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${s.hashtags}</div>
+                <div style="font-size:11px;color:var(--primary);">${s.cta}</div>
+                ${s.reelAudio ? `<div style="font-size:11px;margin-top:4px;">🎵 ${s.reelAudio}</div>` : ''}
+                ${s.visualStyle ? `<div style="font-size:11px;margin-top:4px;">🎨 ${s.visualStyle}</div>` : ''}
+                ${s.trendingTags?.length ? `<div style="font-size:10px;margin-top:4px;">${s.trendingTags.slice(0,6).map(t => `<span class="cc-tag">${t.startsWith('#') ? t : '#'+t}</span>`).join(' ')}</div>` : ''}
+                <div style="font-size:11px;color:var(--muted);margin-top:6px;">💡 ${s.reason}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <button class="btn btn-sm btn-primary" onclick="approveSuggestion('${s.id}')">✅ Approve</button>
+                <button class="btn btn-sm btn-outline" onclick="copyPost('${s.id}')">📋 Copy All</button>
+                <button class="btn btn-sm btn-outline" onclick="dismissSuggestion('${s.id}')">✕ Dismiss</button>
+              </div>
+            </div></div>`).join('');
+        }
+        document.getElementById('sug-status').innerHTML = `
+          <div>🤖 Autopilot: <strong>${brandConfig.setupComplete ? 'Active' : 'Waiting for brand setup'}</strong></div>
+          <div style="margin-top:4px;">Last analysis: ${data.stats?.lastRunAt ? new Date(data.stats.lastRunAt).toLocaleString('en-AU') : 'Starting...'}</div>
+          <div style="margin-top:4px;">Total: ${data.stats?.total || 0} · New: ${data.stats?.new || 0} · Approved: ${data.stats?.approved || 0}</div>`;
+      } catch { document.getElementById('sug-list').innerHTML = '<div class="empty"><p>Start the dashboard server</p></div>'; }
+    }
+
+    async function approveSuggestion(id) { await fetch(`/api/suggestions/${id}/approve`, { method: 'POST' }); loadSuggestions(); }
+    async function dismissSuggestion(id) { await fetch(`/api/suggestions/${id}/dismiss`, { method: 'POST' }); loadSuggestions(); }
+    function copyPost(id) {
+      fetch('/api/suggestions/all').then(r => r.json()).then(data => {
+        const s = (data.suggestions || []).find(x => x.id === id);
+        if (!s) return;
+        navigator.clipboard.writeText(`${s.caption}\n\n${s.hashtags}\n\n${s.cta}${s.reelAudio ? '\n\n🎵 Reel Audio: ' + s.reelAudio : ''}`);
+      });
+    }
+
+    // ── Generate ─────────────────────────────────────────────────
+    async function generate() {
+      const preview = document.getElementById('g-preview');
+      const city = document.getElementById('g-city').value;
+      const trend = document.getElementById('g-trend').value;
+      const screen = document.getElementById('g-screen').value;
+      const style = document.getElementById('g-style').value;
+      document.getElementById('g-style-badge').textContent = style ? `Style: ${style}` : 'Style: random';
+      preview.innerHTML = `<div style="text-align:center;padding:30px"><span class="spinner"></span><p style="margin-top:10px;color:var(--muted);font-size:12px">Writing caption for ${city}...</p></div>`;
+      try {
+        const capRes = await fetch('/api/generate-caption', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city, trend }) });
+        const capData = await capRes.json();
+        preview.innerHTML = `<div style="text-align:center;padding:30px"><span class="spinner"></span><p style="margin-top:10px;color:var(--muted);font-size:12px">Generating image...</p></div>`;
+        const imgRes = await fetch('/api/generate-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city, screen: screen || undefined, caption: capData.caption, trend, style: style || undefined }) });
+        const imgData = await imgRes.json();
+        preview.innerHTML = `<div style="text-align:center">
+          ${imgData.url ? `<img src="${imgData.url}" style="width:100%;border-radius:12px;margin-bottom:12px;">` : '<div class="empty"><p>Image generation failed</p></div>'}
+          ${imgData.style ? `<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Style: ${imgData.style}</div>` : ''}
+          <div style="text-align:left;padding:8px;">
+            <div class="cc-city">${city}</div>
+            <div style="margin-top:6px;" id="gen-caption">${capData.caption || ''}</div>
+            <div style="margin-top:6px;font-size:11px;color:var(--muted);" id="gen-hashtags">${capData.hashtags || ''}</div>
+            <div style="margin-top:6px;font-size:11px;color:var(--primary);font-weight:600;" id="gen-cta">${capData.cta || ''}</div>
+            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-sm btn-primary" onclick="copyGenerated()">📋 Copy All</button>
+              <button class="btn btn-sm btn-outline" onclick="copyText('gen-caption')">Caption</button>
+              <button class="btn btn-sm btn-outline" onclick="copyText('gen-hashtags')">Tags</button>
+              ${imgData.url ? `<a href="${imgData.url}" download class="btn btn-sm btn-outline" style="text-decoration:none;">⬇️ Download</a>` : ''}
+            </div>
+          </div></div>`;
+      } catch (e) { preview.innerHTML = `<div class="empty"><p>Start the dashboard server first</p></div>`; }
+    }
+
+    function copyText(id) { const el = document.getElementById(id); if (el) { navigator.clipboard.writeText(el.textContent); el.style.background = '#DCFCE7'; setTimeout(() => el.style.background = '', 1000); } }
+    function copyGenerated() {
+      const c = document.getElementById('gen-caption')?.textContent || '';
+      const h = document.getElementById('gen-hashtags')?.textContent || '';
+      const t = document.getElementById('gen-cta')?.textContent || '';
+      navigator.clipboard.writeText(`${c}\n\n${h}\n\n${t}`);
+    }
+
+    // ── Calendar ─────────────────────────────────────────────────
+    let calYear = 2026, calMonth = 4, calPosts = [];
+    function calNav(dir) { calMonth += dir; if (calMonth > 12) { calMonth = 1; calYear++; } if (calMonth < 1) { calMonth = 12; calYear--; } renderCal(); }
+    async function renderCal() {
+      document.getElementById('cal-title').textContent = new Date(calYear, calMonth - 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+      try { const res = await fetch('/api/schedule'); const data = await res.json(); calPosts = data.posts || []; document.getElementById('sch-stats').textContent = `${data.stats?.total || 0} total · ${data.stats?.upcoming || 0} upcoming`; } catch { calPosts = []; }
+      const grid = document.getElementById('cal-grid');
+      const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+      const offset = firstDay === 0 ? 6 : firstDay - 1;
+      const today = new Date().getDate();
+      const isCurrentMonth = calYear === new Date().getFullYear() && calMonth === new Date().getMonth() + 1;
+      let html = '';
+      for (let i = 0; i < offset; i++) html += '<div></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dayPosts = calPosts.filter(p => p.scheduledAt?.startsWith(dateStr));
+        const isToday = isCurrentMonth && d === today;
+        const dots = dayPosts.map(p => { const c = p.status === 'ready' ? '#3B82F6' : p.status === 'failed' ? '#EF4444' : 'var(--primary)'; return `<div style="width:6px;height:6px;border-radius:50%;background:${c};display:inline-block;margin:1px;"></div>`; }).join('');
+        html += `<div style="padding:6px 4px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;${isToday ? 'background:var(--primary);color:white;font-weight:700;' : ''}">${d}<div style="min-height:10px;">${dots}</div></div>`;
+      }
+      grid.innerHTML = html;
+      const tbody = document.getElementById('sch-table');
+      tbody.innerHTML = calPosts.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No scheduled posts</td></tr>' :
+        calPosts.map(p => `<tr><td style="font-size:12px;">${new Date(p.scheduledAt).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</td><td>${p.city}</td><td style="text-transform:capitalize;">${p.platform}</td><td><span class="status ${p.status === 'ready' ? 'active' : 'draft'}">${p.status}</span></td><td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.caption || '<em style="color:var(--muted)">auto-generate</em>'}</td><td><button class="btn btn-sm btn-outline" onclick="deletePost('${p.id}')">✕</button></td></tr>`).join('');
+    }
+    async function schedulePost() {
+      const date = document.getElementById('sch-date').value;
+      if (!date) { document.getElementById('sch-result').innerHTML = '<span style="color:#EF4444;font-size:12px;">Pick a date</span>'; return; }
+      const body = { scheduledAt: new Date(date).toISOString(), city: document.getElementById('sch-city').value, platform: document.getElementById('sch-platform').value, caption: document.getElementById('sch-caption').value || undefined };
+      try { await fetch('/api/schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); document.getElementById('sch-result').innerHTML = '<span style="color:var(--success);font-size:12px;">✅ Scheduled!</span>'; renderCal(); } catch (e) { document.getElementById('sch-result').innerHTML = `<span style="color:#EF4444;font-size:12px;">Failed</span>`; }
+    }
+    async function deletePost(id) { await fetch(`/api/schedule/${id}`, { method: 'DELETE' }); renderCal(); }
+
+    // ── Status check ─────────────────────────────────────────────
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('status-dot').style.background = 'var(--success)';
+        document.getElementById('status-text').textContent = data.brandSetup ? `${data.brandName} Online` : 'Set up brand →';
+        // Overview stats
+        try { const s = await fetch('/api/suggestions'); const sd = await s.json(); document.getElementById('ov-suggestions').textContent = sd.stats?.new || 0; } catch {}
+        try { const s = await fetch('/api/schedule'); const sd = await s.json(); document.getElementById('ov-scheduled').textContent = sd.stats?.upcoming || 0; } catch {}
+        try { const s = await fetch('/api/output'); const sd = await s.json(); document.getElementById('ov-images').textContent = (sd.images || []).length; } catch {}
+      } catch { document.getElementById('status-text').textContent = 'Offline'; }
+    }
+
+    // ── Init ─────────────────────────────────────────────────────
+    loadBrand();
+    loadScreens();
+    checkStatus();
+    setInterval(loadSuggestions, 30000);
+    setTimeout(loadSuggestions, 2000);
+    setTimeout(renderCal, 500);
+  </script>
+</body>
+</html>

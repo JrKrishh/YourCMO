@@ -1,0 +1,36 @@
+{
+  "figmaFileKey": "DX3DUhjIYbhJ1sA9FQYZyz",
+  "prototypeUrl": "https://www.figma.com/proto/DX3DUhjIYbhJ1sA9FQYZyz/RewOz",
+  "frames": [
+    {
+      "screenName": "loyalty-card",
+      "figmaNodeId": "123:456",
+      "description": "Main loyalty stamp card screen",
+      "tags": ["loyalty", "stamps"]
+    },
+    {
+      "screenName": "order-ahead",
+      "figmaNodeId": "123:789",
+      "description": "Order ahead menu screen",
+      "tags": ["ordering", "menu"]
+    },
+    {
+      "screenName": "dashboard",
+      "figmaNodeId": "123:012",
+      "description": "Owner analytics dashboard",
+      "tags": ["analytics", "owner"]
+    },
+    {
+      "screenName": "stamp-collection",
+      "figmaNodeId": "123:345",
+      "description": "Stamp collection progress view",
+      "tags": ["loyalty", "progress"]
+    },
+    {
+      "screenName": "rewards-screen",
+      "figmaNodeId": "123:678",
+      "description": "Available rewards screen",
+      "tags": ["rewards", "redemption"]
+    }
+  ]
+}

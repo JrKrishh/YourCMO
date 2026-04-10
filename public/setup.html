@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YourCMO — Setup Your Brand</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --primary: #6366F1; --primary-hover: #4F46E5; --bg: #F8FAFC; --white: #FFF; --border: #E2E8F0; --text: #1E293B; --muted: #94A3B8; --radius: 16px; --shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .setup-container { max-width: 720px; margin: 0 auto; padding: 40px 24px; }
+
+    .logo-header { text-align: center; margin-bottom: 40px; }
+    .logo-header h1 { font-size: 32px; font-weight: 800; }
+    .logo-header h1 span { background: linear-gradient(135deg, #6366F1, #8B5CF6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-header p { color: var(--muted); font-size: 15px; margin-top: 8px; }
+
+    .step { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 28px; margin-bottom: 20px; }
+    .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+    .step-title { font-size: 18px; font-weight: 700; }
+    .step-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-group { margin-bottom: 0; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; background: var(--white); transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .color-row { display: flex; gap: 16px; margin-bottom: 16px; }
+    .color-pick { flex: 1; }
+    .color-pick label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .color-pick .color-input { display: flex; align-items: center; gap: 8px; }
+    .color-pick input[type="color"] { width: 40px; height: 36px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; padding: 2px; }
+    .color-pick input[type="text"] { flex: 1; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: monospace; }
+
+    .tag-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 10px; min-height: 42px; cursor: text; }
+    .tag-input:focus-within { border-color: var(--primary); }
+    .tag-input input { border: none; outline: none; font-size: 13px; flex: 1; min-width: 100px; padding: 2px 0; }
+    .tag { display: inline-flex; align-items: center; gap: 4px; background: #EEF2FF; color: var(--primary); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .tag button { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+
+    .logo-upload { border: 2px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+    .logo-upload:hover { border-color: var(--primary); }
+    .logo-upload.has-logo { border-style: solid; }
+    .logo-upload img { max-height: 80px; border-radius: 8px; }
+    .logo-upload p { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .logo-upload input { display: none; }
+
+    .btn { padding: 12px 28px; border-radius: 24px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--text); }
+
+    .submit-row { text-align: center; margin-top: 32px; }
+    .submit-row .btn { padding: 14px 48px; font-size: 16px; }
+
+    .preview-bar { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+    .preview-bar .preview-logo { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: white; }
+    .preview-bar .preview-name { font-size: 18px; font-weight: 700; }
+    .preview-bar .preview-tagline { font-size: 12px; color: var(--muted); }
+
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .color-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="setup-container">
+    <div class="logo-header">
+      <h1><span>YourCMO</span></h1>
+      <p>Set up your brand and let AI be your Chief Marketing Officer</p>
+    </div>
+
+    <!-- Live preview bar -->
+    <div class="preview-bar" id="preview-bar" style="display:none;">
+      <div class="preview-logo" id="preview-logo">?</div>
+      <div>
+        <div class="preview-name" id="preview-name">Your Brand</div>
+        <div class="preview-tagline" id="preview-tagline"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Brand Identity -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Brand Identity</div><div class="step-desc">Who are you?</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Brand Name *</label><input type="text" id="brand-name" placeholder="e.g. Rewoz, FitTrack, CloudSync"></div>
+        <div class="form-group"><label>Website</label><input type="text" id="brand-website" placeholder="e.g. yourapp.com"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group"><label>Tagline</label><input type="text" id="brand-tagline" placeholder="e.g. Digital loyalty for modern cafes"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Logo</label>
+          <div class="logo-upload" id="logo-drop" onclick="document.getElementById('logo-file').click()">
+            <div id="logo-preview">📷 Click to upload your logo (PNG, JPG)</div>
+            <input type="file" id="logo-file" accept="image/*">
+          </div>
+        </div>
+      </div>
+      <div class="color-row">
+        <div class="color-pick"><label>Primary Color</label><div class="color-input"><input type="color" id="color-primary" value="#6366F1"><input type="text" id="color-primary-hex" value="#6366F1"></div></div>
+        <div class="color-pick"><label>Secondary Color</label><div class="color-input"><input type="color" id="color-secondary" value="#1E293B"><input type="text" id="color-secondary-hex" value="#1E293B"></div></div>
+        <div class="color-pick"><label>Accent Color</label><div class="color-input"><input type="color" id="color-accent" value="#F59E0B"><input type="text" id="color-accent-hex" value="#F59E0B"></div></div>
+      </div>
+    </div>
+
+    <!-- Step 2: Product Details -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Product Details</div><div class="step-desc">What do you sell?</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Product Type *</label>
+          <select id="product-type">
+            <option value="">Select...</option>
+            <option>SaaS / Software</option><option>Mobile App</option><option>E-commerce</option>
+            <option>Service / Agency</option><option>Physical Product</option><option>Marketplace</option>
+            <option>Education / Course</option><option>Restaurant / Cafe</option><option>Health / Fitness</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Pricing</label><input type="text" id="product-pricing" placeholder="e.g. $39/month, Free, $99 one-time"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group"><label>One-Line Pitch *</label><input type="text" id="product-pitch" placeholder="e.g. $39/month digital loyalty for cafes. $0 commission, 90-day free trial."><div class="hint">This is used in every caption and image prompt</div></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group"><label>Product Description</label><textarea id="product-desc" rows="3" placeholder="Describe your product in detail — features, benefits, what problem it solves..."></textarea></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Key Features (press Enter to add)</label>
+          <div class="tag-input" id="features-tags" onclick="this.querySelector('input').focus()"><input type="text" placeholder="e.g. Real-time analytics" onkeydown="addTag(event,'features-tags')"></div>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Unique Selling Points (press Enter to add)</label>
+          <div class="tag-input" id="usp-tags" onclick="this.querySelector('input').focus()"><input type="text" placeholder="e.g. $0 commission" onkeydown="addTag(event,'usp-tags')"></div>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Proof Points / Stats (press Enter to add)</label>
+          <div class="tag-input" id="proof-tags" onclick="this.querySelector('input').focus()"><input type="text" placeholder="e.g. 2x repeat visits, 10k+ users" onkeydown="addTag(event,'proof-tags')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Target Audience -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div><div class="step-title">Target Audience</div><div class="step-desc">Who are you marketing to?</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Target Domain / Industry *</label><input type="text" id="target-domain" placeholder="e.g. cafes, fitness, SaaS, fashion"></div>
+        <div class="form-group"><label>Target Users *</label><input type="text" id="target-users" placeholder="e.g. cafe owners aged 25-55"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Target Regions / Cities (press Enter to add) *</label>
+          <div class="tag-input" id="region-tags" onclick="this.querySelector('input').focus()"><input type="text" placeholder="e.g. Adelaide, Melbourne, Sydney" onkeydown="addTag(event,'region-tags')"></div>
+          <div class="hint">The agent will analyse trends specifically in these regions</div>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Target Platforms</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="plat-instagram" checked> Instagram</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="plat-facebook"> Facebook</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="plat-tiktok"> TikTok</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="plat-twitter"> X / Twitter</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="plat-linkedin"> LinkedIn</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Brand Voice -->
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div><div class="step-title">Brand Voice & Tone</div><div class="step-desc">How should your CMO sound?</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Brand Voice</label>
+          <select id="brand-voice">
+            <option value="friendly and professional">Friendly & Professional</option>
+            <option value="casual and witty">Casual & Witty</option>
+            <option value="bold and confident">Bold & Confident</option>
+            <option value="warm and approachable">Warm & Approachable</option>
+            <option value="luxury and sophisticated">Luxury & Sophisticated</option>
+            <option value="playful and energetic">Playful & Energetic</option>
+            <option value="authoritative and expert">Authoritative & Expert</option>
+            <option value="minimalist and clean">Minimalist & Clean</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Content Tone</label>
+          <select id="content-tone">
+            <option value="casual and approachable">Casual & Approachable</option>
+            <option value="professional and polished">Professional & Polished</option>
+            <option value="edgy and disruptive">Edgy & Disruptive</option>
+            <option value="inspirational and motivating">Inspirational & Motivating</option>
+            <option value="educational and informative">Educational & Informative</option>
+            <option value="humorous and relatable">Humorous & Relatable</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <button class="btn btn-primary" id="save-btn" onclick="saveBrand()">🚀 Launch YourCMO</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;" id="save-status"></p>
+    </div>
+  </div>
+
+  <script>
+    // Tag input helper
+    function addTag(e, containerId) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const input = e.target;
+      const val = input.value.trim();
+      if (!val) return;
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.innerHTML = `${val} <button onclick="this.parentElement.remove()">&times;</button>`;
+      const container = document.getElementById(containerId);
+      container.insertBefore(tag, input);
+      input.value = '';
+    }
+
+    function getTags(containerId) {
+      return Array.from(document.getElementById(containerId).querySelectorAll('.tag'))
+        .map(t => t.textContent.replace('×', '').trim());
+    }
+
+    // Color sync
+    ['primary', 'secondary', 'accent'].forEach(c => {
+      const picker = document.getElementById(`color-${c}`);
+      const hex = document.getElementById(`color-${c}-hex`);
+      picker.addEventListener('input', () => { hex.value = picker.value; updatePreview(); });
+      hex.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) { picker.value = hex.value; updatePreview(); } });
+    });
+
+    // Logo upload
+    const logoFile = document.getElementById('logo-file');
+    let logoBase64 = null;
+    logoFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        logoBase64 = ev.target.result;
+        document.getElementById('logo-preview').innerHTML = `<img src="${logoBase64}" alt="Logo"><p>${file.name}</p>`;
+        document.getElementById('logo-drop').classList.add('has-logo');
+        updatePreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Live preview
+    document.getElementById('brand-name').addEventListener('input', updatePreview);
+    document.getElementById('brand-tagline').addEventListener('input', updatePreview);
+
+    function updatePreview() {
+      const name = document.getElementById('brand-name').value;
+      const tagline = document.getElementById('brand-tagline').value;
+      const color = document.getElementById('color-primary').value;
+      const bar = document.getElementById('preview-bar');
+
+      if (name) {
+        bar.style.display = 'flex';
+        document.getElementById('preview-name').textContent = name;
+        document.getElementById('preview-tagline').textContent = tagline;
+        const logo = document.getElementById('preview-logo');
+        logo.style.background = color;
+        logo.textContent = name.charAt(0).toUpperCase();
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    // Save brand
+    async function saveBrand() {
+      const name = document.getElementById('brand-name').value.trim();
+      const pitch = document.getElementById('product-pitch').value.trim();
+      const domain = document.getElementById('target-domain').value.trim();
+      const users = document.getElementById('target-users').value.trim();
+      const regions = getTags('region-tags');
+
+      if (!name) { alert('Brand name is required'); return; }
+      if (!pitch) { alert('Product pitch is required'); return; }
+      if (!domain) { alert('Target domain is required'); return; }
+      if (!users) { alert('Target users is required'); return; }
+      if (regions.length === 0) { alert('Add at least one target region'); return; }
+
+      const platforms = [];
+      if (document.getElementById('plat-instagram').checked) platforms.push('instagram');
+      if (document.getElementById('plat-facebook').checked) platforms.push('facebook');
+      if (document.getElementById('plat-tiktok').checked) platforms.push('tiktok');
+      if (document.getElementById('plat-twitter').checked) platforms.push('twitter');
+      if (document.getElementById('plat-linkedin').checked) platforms.push('linkedin');
+
+      const brand = {
+        name,
+        tagline: document.getElementById('brand-tagline').value.trim(),
+        website: document.getElementById('brand-website').value.trim(),
+        primaryColor: document.getElementById('color-primary').value,
+        secondaryColor: document.getElementById('color-secondary').value,
+        accentColor: document.getElementById('color-accent').value,
+        productType: document.getElementById('product-type').value,
+        productPitch: pitch,
+        productDescription: document.getElementById('product-desc').value.trim(),
+        pricing: document.getElementById('product-pricing').value.trim(),
+        keyFeatures: getTags('features-tags'),
+        uniqueSellingPoints: getTags('usp-tags'),
+        proofPoints: getTags('proof-tags'),
+        targetDomain: domain,
+        targetUsers: users,
+        targetRegions: regions,
+        targetPlatforms: platforms,
+        brandVoice: document.getElementById('brand-voice').value,
+        contentTone: document.getElementById('content-tone').value,
+        logoBase64: logoBase64,
+      };
+
+      const btn = document.getElementById('save-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Setting up...';
+
+      try {
+        const res = await fetch('/api/brand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(brand),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('save-status').textContent = '✅ Brand configured! Redirecting to dashboard...';
+          setTimeout(() => { window.location.href = '/'; }, 1500);
+        } else {
+          throw new Error(data.error || 'Failed');
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Launch YourCMO';
+        document.getElementById('save-status').textContent = '❌ ' + e.message;
+      }
+    }
+
+    // Load existing brand config if any
+    async function loadExisting() {
+      try {
+        const res = await fetch('/api/brand');
+        const brand = await res.json();
+        if (!brand.isConfigured) return;
+
+        document.getElementById('brand-name').value = brand.name || '';
+        document.getElementById('brand-tagline').value = brand.tagline || '';
+        document.getElementById('brand-website').value = brand.website || '';
+        document.getElementById('color-primary').value = brand.primaryColor || '#6366F1';
+        document.getElementById('color-primary-hex').value = brand.primaryColor || '#6366F1';
+        document.getElementById('color-secondary').value = brand.secondaryColor || '#1E293B';
+        document.getElementById('color-secondary-hex').value = brand.secondaryColor || '#1E293B';
+        document.getElementById('color-accent').value = brand.accentColor || '#F59E0B';
+        document.getElementById('color-accent-hex').value = brand.accentColor || '#F59E0B';
+        document.getElementById('product-type').value = brand.productType || '';
+        document.getElementById('product-pitch').value = brand.productPitch || '';
+        document.getElementById('product-desc').value = brand.productDescription || '';
+        document.getElementById('product-pricing').value = brand.pricing || '';
+        document.getElementById('target-domain').value = brand.targetDomain || '';
+        document.getElementById('target-users').value = brand.targetUsers || '';
+        document.getElementById('brand-voice').value = brand.brandVoice || 'friendly and professional';
+        document.getElementById('content-tone').value = brand.contentTone || 'casual and approachable';
+
+        // Load tags
+        const loadTags = (id, items) => {
+          const container = document.getElementById(id);
+          const input = container.querySelector('input');
+          (items || []).forEach(val => {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.innerHTML = `${val} <button onclick="this.parentElement.remove()">&times;</button>`;
+            container.insertBefore(tag, input);
+          });
+        };
+        loadTags('features-tags', brand.keyFeatures);
+        loadTags('usp-tags', brand.uniqueSellingPoints);
+        loadTags('proof-tags', brand.proofPoints);
+        loadTags('region-tags', brand.targetRegions);
+
+        // Platforms
+        (brand.targetPlatforms || []).forEach(p => {
+          const el = document.getElementById('plat-' + p);
+          if (el) el.checked = true;
+        });
+
+        document.getElementById('save-btn').textContent = '💾 Update Brand';
+        updatePreview();
+      } catch {}
+    }
+    loadExisting();
+  </script>
+</body>
+</html>

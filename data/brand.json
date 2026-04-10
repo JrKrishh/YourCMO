@@ -1,0 +1,72 @@
+{
+  "brandName": "RewOz",
+  "tagline": "Turn First-Time Customers Into Loyal Regulars",
+  "website": "https://rewoz.com.au/",
+  "logoPath": "assets/brand-logo.jpg",
+  "instagram": "",
+  "facebook": "",
+  "email": "",
+  "foundedInfo": "",
+  "primaryColor": "#eb6333",
+  "secondaryColor": "#ffffff",
+  "accentColor": "#eb6333",
+  "brandColors": {
+    "primary": "#eb6333",
+    "secondary": "#ffffff"
+  },
+  "productType": "E-commerce",
+  "productPitch": "Convert Your Regular Entries as a Points",
+  "productDescription": "**Rewoz** (found at rewoz.com.au) is an Australian digital loyalty and rewards platform designed to connect customers with small and local businesses, replacing traditional paper loyalty cards.\n\nThe platform is split into two distinct products:\n\n### 1. Rewoz: Loyalty & Rewards (For Customers)\nThis is the consumer-facing mobile application designed to help users earn and manage perks at local businesses (such as cafés, restaurants, salons, fuel stations, and car washes).\n* **Key Features:**\n    * **Unified Reward Tracking:** Consolidates all loyalty points into a single app, eliminating the need to carry physical punch cards.\n    * **Exclusive Deals:** Gives users access to special \"Buy X, Get X\" offers and off-peak discounts.\n    * **Pre-ordering:** Allows users to pre-order and collect items faster at select partner locations.\n    * **Local Discovery:** Helps users discover new local businesses and hidden gems in their community.\n\n### 2. Rewoz Plus: Retain & Reward (For Businesses)\nThis is the partner application designed for small business owners to easily create, manage, and track digital loyalty programs without requiring complex technical setups.\n* **Key Features:**\n    * **Custom Loyalty Programs:** Enables businesses to design their own tailored reward systems and \"Buy X, Get X\" promotions.\n    * **Traffic Boosting:** Allows merchants to offer time-based promotions to increase foot traffic during off-peak hours.\n    * **Real-time Analytics:** Tracks customer visits, redemptions, and engagement activity.\n    * **Customer Retention:** Focuses on helping businesses build loyalty and increase repeat sales effortlessly. \n\n**Company Details:**\n* **Developer:** REWOZ PTY LTD\n* **Location:** 217 Flinders Street, Adelaide, SA 5000, Australia\n* **Target Market:** Built specifically for Australians to support local commerce and assist community businesses in growing their customer base.",
+  "pricing": "Free",
+  "freeTrial": "",
+  "keyFeatures": [
+    "Loyalty points",
+    "cafe",
+    "more walk in"
+  ],
+  "uniqueSellingPoints": [
+    "$0 commission",
+    "free for customers"
+  ],
+  "proofPoints": [
+    "2x repeat users"
+  ],
+  "provenStats": [
+    "2x repeat users"
+  ],
+  "targetDomain": "Cafes",
+  "domain": "Cafes",
+  "subCategory": "",
+  "targetUsers": "Cafe owners, customers",
+  "targetAudience": "Cafe owners, customers",
+  "targetCities": [
+    "sydney"
+  ],
+  "targetCountries": [],
+  "targetPlatforms": [
+    "instagram",
+    "facebook",
+    "tiktok",
+    "twitter"
+  ],
+  "platforms": [
+    "instagram",
+    "facebook",
+    "tiktok",
+    "twitter"
+  ],
+  "originCountry": "",
+  "originCity": "",
+  "ageRange": "",
+  "interests": [],
+  "painPoints": [],
+  "competitors": [],
+  "competitiveAdvantage": "",
+  "brandVoice": "friendly and professional",
+  "contentTone": "casual and approachable",
+  "agentRole": "Chief Marketing Officer & Content Creator",
+  "avoidTopics": [],
+  "hashtagPrefix": "#RewOz",
+  "setupComplete": true,
+  "configuredAt": "2026-04-10T06:48:52.940Z"
+}

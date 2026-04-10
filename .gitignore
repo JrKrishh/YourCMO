@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment (contains API keys)
+.env
+
+# Generated content
+output/
+
+# Brand assets (user-specific, uploaded via setup)
+assets/*.png
+assets/*.jpg
+assets/*.jpeg
+assets/figma-screens/*.png
+assets/figma-screens/*.jpg
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Kiro specs (local dev only)
+.kiro/

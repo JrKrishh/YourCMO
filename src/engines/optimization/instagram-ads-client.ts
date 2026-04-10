@@ -1,0 +1,313 @@
+import { createLogger } from '../../utils/logger';
+import { AdCampaign } from '../../models/ad-campaign';
+import { AdPlatform, AdStatus, Platform } from '../../models/enums';
+import { AdPerformance, AdTargeting, BidStrategy, Budget } from '../../models/common';
+import { PlatformContent } from '../../models/platform-content';
+import { BoostRecommendation } from '../../core/interfaces';
+
+const logger = createLogger('InstagramAdsClient');
+
+/** Result of uploading a creative asset to Instagram Ads */
+export interface CreativeUploadResult {
+  creativeId: string;
+  url: string;
+  status: 'ready' | 'processing' | 'failed';
+}
+
+/**
+ * Abstraction layer for the Facebook Marketing API (Instagram Ads).
+ * Implementations can be swapped for testing or different API versions.
+ */
+export interface InstagramAdsApi {
+  createCampaign(params: {
+    content: PlatformContent;
+    targeting: AdTargeting;
+    budget: Budget;
+    bidStrategy: BidStrategy;
+    startDate: Date;
+    endDate: Date;
+  }): Promise<{ campaignId: string }>;
+
+  getCampaignPerformance(campaignId: string): Promise<AdPerformance>;
+
+  updateBid(campaignId: string, bidStrategy: BidStrategy): Promise<void>;
+
+  pauseCampaign(campaignId: string): Promise<void>;
+
+  resumeCampaign(campaignId: string): Promise<void>;
+
+  uploadCreative(params: {
+    imageUrl?: string;
+    videoUrl?: string;
+    caption: string;
+    callToAction?: string;
+  }): Promise<CreativeUploadResult>;
+}
+
+/** Default campaign duration in days when not specified */
+const DEFAULT_CAMPAIGN_DURATION_DAYS = 30;
+
+/**
+ * Resolves a BidStrategy from a BoostRecommendation's targeting hints.
+ * Instagram Ads defaults to CPM (impressions-based) since the platform
+ * is visually driven and optimizes well for reach.
+ */
+export function resolveInstagramBidStrategy(recommendation: BoostRecommendation): BidStrategy {
+  const targeting = recommendation.targeting as Record<string, unknown>;
+  const optimizeFor = (targeting.optimizeFor as string) ?? 'engagement';
+
+  switch (optimizeFor) {
+    case 'conversions':
+      return { type: 'CPA', targetCost: recommendation.recommendedBudget * 0.1 };
+    case 'revenue':
+      return { type: 'ROAS', targetCost: recommendation.expectedRoi };
+    case 'impressions':
+      return { type: 'CPM', maxBid: recommendation.recommendedBudget * 0.05 };
+    case 'engagement':
+    default:
+      return { type: 'CPM', maxBid: recommendation.recommendedBudget * 0.03 };
+  }
+}
+
+/**
+ * Builds AdTargeting from a BoostRecommendation's targeting map.
+ * Supports Instagram-specific targeting: interests, demographics,
+ * lookalike audiences, and location targeting.
+ */
+export function buildInstagramAdTargeting(recommendation: BoostRecommendation): AdTargeting {
+  const raw = recommendation.targeting as Record<string, unknown>;
+  return {
+    interests: Array.isArray(raw.interests) ? (raw.interests as string[]) : undefined,
+    locations: Array.isArray(raw.locations) ? (raw.locations as string[]) : undefined,
+    keywords: Array.isArray(raw.keywords) ? (raw.keywords as string[]) : undefined,
+    customAudiences: Array.isArray(raw.customAudiences)
+      ? (raw.customAudiences as string[])
+      : undefined,
+    ageRange: Array.isArray(raw.ageRange) && raw.ageRange.length === 2
+      ? (raw.ageRange as [number, number])
+      : undefined,
+  };
+}
+
+/**
+ * InstagramAdsClient creates and manages Instagram Ads campaigns
+ * via the Facebook Marketing API.
+ *
+ * It uses an InstagramAdsApi abstraction so the actual API calls can be
+ * mocked in tests or swapped for different implementations.
+ *
+ * Key differences from GoogleAdsClient:
+ * - Uses AdPlatform.INSTAGRAM_ADS
+ * - Includes ad creative upload functionality (uploadCreative)
+ * - Instagram-specific targeting (interests, demographics, lookalike audiences)
+ * - Defaults to CPM bidding for visual-first platform
+ */
+export class InstagramAdsClient {
+  private readonly api: InstagramAdsApi;
+  private readonly campaigns: Map<string, AdCampaign> = new Map();
+  private readonly creatives: Map<string, CreativeUploadResult> = new Map();
+
+  constructor(api: InstagramAdsApi) {
+    this.api = api;
+  }
+
+  /**
+   * Uploads an ad creative (image or video) to Instagram Ads.
+   *
+   * Preconditions:
+   * - At least one of imageUrl or videoUrl must be provided
+   * - caption must be non-empty
+   *
+   * Postconditions:
+   * - Returns a CreativeUploadResult with a creativeId
+   * - Creative is stored locally for association with campaigns
+   */
+  async uploadCreative(params: {
+    imageUrl?: string;
+    videoUrl?: string;
+    caption: string;
+    callToAction?: string;
+  }): Promise<CreativeUploadResult> {
+    logger.info({ hasImage: !!params.imageUrl, hasVideo: !!params.videoUrl }, 'Uploading creative');
+
+    if (!params.imageUrl && !params.videoUrl) {
+      throw new Error('At least one of imageUrl or videoUrl must be provided');
+    }
+    if (!params.caption) {
+      throw new Error('Caption must be non-empty');
+    }
+
+    const result = await this.api.uploadCreative(params);
+    this.creatives.set(result.creativeId, result);
+
+    logger.info({ creativeId: result.creativeId, status: result.status }, 'Creative uploaded');
+    return result;
+  }
+
+  /**
+   * Creates an Instagram Ads campaign from a BoostRecommendation.
+   *
+   * Preconditions:
+   * - recommendation.recommendedBudget > 0
+   * - recommendation.postId is non-empty
+   *
+   * Postconditions:
+   * - Returns an AdCampaign with status ACTIVE and platform INSTAGRAM_ADS
+   * - Campaign is registered with the underlying API
+   */
+  async createAdCampaign(recommendation: BoostRecommendation): Promise<AdCampaign> {
+    logger.info({ postId: recommendation.postId }, 'Creating Instagram Ads campaign');
+
+    if (recommendation.recommendedBudget <= 0) {
+      throw new Error('Recommended budget must be positive');
+    }
+
+    const bidStrategy = resolveInstagramBidStrategy(recommendation);
+    const targeting = buildInstagramAdTargeting(recommendation);
+
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + DEFAULT_CAMPAIGN_DURATION_DAYS);
+
+    const budget: Budget = {
+      dailyLimit: Math.round((recommendation.recommendedBudget / DEFAULT_CAMPAIGN_DURATION_DAYS) * 100) / 100,
+      totalLimit: recommendation.recommendedBudget,
+      remaining: recommendation.recommendedBudget,
+      spent: 0,
+      currency: 'USD',
+    };
+
+    const content: PlatformContent = {
+      contentId: recommendation.postId,
+      platform: Platform.INSTAGRAM,
+      text: '',
+      visualAssets: [],
+      hashtags: [],
+      mentions: [],
+      postId: recommendation.postId,
+    };
+
+    const result = await this.api.createCampaign({
+      content,
+      targeting,
+      budget,
+      bidStrategy,
+      startDate,
+      endDate,
+    });
+
+    const adCampaign: AdCampaign = {
+      adCampaignId: result.campaignId,
+      platform: AdPlatform.INSTAGRAM_ADS,
+      content,
+      targeting,
+      budget,
+      bidStrategy,
+      startDate,
+      endDate,
+      status: AdStatus.ACTIVE,
+      performance: {
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        spend: 0,
+        cpc: 0,
+        cpm: 0,
+        ctr: 0,
+        roi: 0,
+      },
+    };
+
+    this.campaigns.set(adCampaign.adCampaignId, adCampaign);
+
+    logger.info(
+      { adCampaignId: adCampaign.adCampaignId, bidStrategy: bidStrategy.type },
+      'Instagram Ads campaign created',
+    );
+
+    return adCampaign;
+  }
+
+  /**
+   * Fetches current performance metrics for a campaign.
+   */
+  async getAdCampaignPerformance(adCampaignId: string): Promise<AdPerformance> {
+    logger.info({ adCampaignId }, 'Fetching campaign performance');
+
+    const campaign = this.campaigns.get(adCampaignId);
+    if (!campaign) {
+      throw new Error(`Campaign not found: ${adCampaignId}`);
+    }
+
+    const performance = await this.api.getCampaignPerformance(adCampaignId);
+    campaign.performance = performance;
+    campaign.budget.spent = performance.spend;
+    campaign.budget.remaining = campaign.budget.totalLimit - performance.spend;
+
+    return performance;
+  }
+
+  /**
+   * Adjusts the bid strategy for an active campaign.
+   */
+  async adjustBid(adCampaignId: string, bidStrategy: BidStrategy): Promise<void> {
+    logger.info({ adCampaignId, bidStrategy: bidStrategy.type }, 'Adjusting bid strategy');
+
+    const campaign = this.campaigns.get(adCampaignId);
+    if (!campaign) {
+      throw new Error(`Campaign not found: ${adCampaignId}`);
+    }
+    if (campaign.status !== AdStatus.ACTIVE) {
+      throw new Error(`Cannot adjust bid on campaign with status: ${campaign.status}`);
+    }
+
+    await this.api.updateBid(adCampaignId, bidStrategy);
+    campaign.bidStrategy = bidStrategy;
+  }
+
+  /**
+   * Pauses an active campaign.
+   */
+  async pauseAdCampaign(adCampaignId: string): Promise<void> {
+    logger.info({ adCampaignId }, 'Pausing campaign');
+
+    const campaign = this.campaigns.get(adCampaignId);
+    if (!campaign) {
+      throw new Error(`Campaign not found: ${adCampaignId}`);
+    }
+    if (campaign.status !== AdStatus.ACTIVE) {
+      throw new Error(`Cannot pause campaign with status: ${campaign.status}`);
+    }
+
+    await this.api.pauseCampaign(adCampaignId);
+    campaign.status = AdStatus.PAUSED;
+  }
+
+  /**
+   * Resumes a paused campaign.
+   */
+  async resumeAdCampaign(adCampaignId: string): Promise<void> {
+    logger.info({ adCampaignId }, 'Resuming campaign');
+
+    const campaign = this.campaigns.get(adCampaignId);
+    if (!campaign) {
+      throw new Error(`Campaign not found: ${adCampaignId}`);
+    }
+    if (campaign.status !== AdStatus.PAUSED) {
+      throw new Error(`Cannot resume campaign with status: ${campaign.status}`);
+    }
+
+    await this.api.resumeCampaign(adCampaignId);
+    campaign.status = AdStatus.ACTIVE;
+  }
+
+  /** Returns a locally cached campaign by ID, or undefined. */
+  getCampaign(adCampaignId: string): AdCampaign | undefined {
+    return this.campaigns.get(adCampaignId);
+  }
+
+  /** Returns a locally cached creative by ID, or undefined. */
+  getCreative(creativeId: string): CreativeUploadResult | undefined {
+    return this.creatives.get(creativeId);
+  }
+}
